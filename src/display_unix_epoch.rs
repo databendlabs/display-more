@@ -22,6 +22,10 @@ use chrono::Utc;
 pub struct DisplayUnixTimeStamp {
     /// The duration since the UNIX epoch.
     duration: Duration,
+
+    in_millis: bool,
+
+    with_timezone: bool,
 }
 
 impl fmt::Display for DisplayUnixTimeStamp {
@@ -29,7 +33,40 @@ impl fmt::Display for DisplayUnixTimeStamp {
         let system_time = UNIX_EPOCH + self.duration;
         let datetime: DateTime<Utc> = system_time.into();
 
-        write!(f, "{}", datetime.format("%Y-%m-%dT%H:%M:%S%.6fZ%z"))
+        let fmt = if self.in_millis {
+            if self.with_timezone {
+                "%Y-%m-%dT%H:%M:%S%.3fZ%z"
+            } else {
+                "%Y-%m-%dT%H:%M:%S%.3f"
+            }
+        } else if self.with_timezone {
+            "%Y-%m-%dT%H:%M:%S%.6fZ%z"
+        } else {
+            "%Y-%m-%dT%H:%M:%S%.6f"
+        };
+
+        write!(f, "{}", datetime.format(fmt))
+    }
+}
+
+impl DisplayUnixTimeStamp {
+    pub fn new(duration: Duration) -> Self {
+        Self {
+            duration,
+            in_millis: false,
+            with_timezone: true,
+        }
+    }
+
+    pub fn in_millis(self, in_millis: bool) -> Self {
+        Self { in_millis, ..self }
+    }
+
+    pub fn with_timezone(self, with_timezone: bool) -> Self {
+        Self {
+            with_timezone,
+            ..self
+        }
     }
 }
 
@@ -50,11 +87,18 @@ impl fmt::Display for DisplayUnixTimeStamp {
 /// ```
 pub trait DisplayUnixTimeStampExt {
     fn display_unix_timestamp(&self) -> DisplayUnixTimeStamp;
+
+    /// Display the duration since the UNIX epoch in milliseconds without timezone.
+    fn display_unix_timestamp_short(&self) -> DisplayUnixTimeStamp {
+        self.display_unix_timestamp()
+            .in_millis(true)
+            .with_timezone(false)
+    }
 }
 
 impl DisplayUnixTimeStampExt for Duration {
     fn display_unix_timestamp(&self) -> DisplayUnixTimeStamp {
-        DisplayUnixTimeStamp { duration: *self }
+        DisplayUnixTimeStamp::new(*self)
     }
 }
 
@@ -73,5 +117,8 @@ mod tests {
         let epoch = Duration::from_millis(1723102819023);
         let display = epoch.display_unix_timestamp();
         assert_eq!(format!("{}", display), "2024-08-08T07:40:19.023000Z+0000");
+
+        let display = epoch.display_unix_timestamp_short();
+        assert_eq!(format!("{}", display), "2024-08-08T07:40:19.023");
     }
 }
