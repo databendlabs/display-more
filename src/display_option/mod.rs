@@ -31,6 +31,19 @@ impl<T: fmt::Display> fmt::Display for DisplayOption<'_, T> {
     }
 }
 
+/// Implement `Display` for `Option<T>` if T is `Display`.
+///
+/// It outputs a literal string `"None"` if it is None. Otherwise it invokes the Display
+/// implementation for T.
+///
+/// # Example
+///
+/// ```rust
+/// use display_more::DisplayOptionExt;
+///
+/// let option = Some(1);
+/// assert_eq!(option.display().to_string(), "1");
+/// ```
 pub trait DisplayOptionExt<'a, T: fmt::Display> {
     fn display(&'a self) -> DisplayOption<'a, T>;
 }

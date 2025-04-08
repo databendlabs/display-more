@@ -12,6 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Display more types.
+//!
+//! # Example
+//!
+//! ```rust
+//! use display_more::DisplayOptionExt;
+//!
+//! let option = Some(1);
+//! assert_eq!(option.display().to_string(), "1");
+//! ```
+
 pub mod display_option;
 pub mod display_slice;
 pub mod display_unix_epoch;
+
+pub use display_option::DisplayOptionExt;
+pub use display_slice::DisplaySliceExt;
+pub use display_unix_epoch::DisplayUnixTimeStampExt;

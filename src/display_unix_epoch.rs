@@ -33,6 +33,21 @@ impl fmt::Display for DisplayUnixTimeStamp {
     }
 }
 
+/// Implement `Display` for `Duration` to display the duration since the UNIX epoch.
+///
+/// # Example
+///
+/// ```rust
+/// use std::time::Duration;
+///
+/// use display_more::DisplayUnixTimeStampExt;
+///
+/// let duration = Duration::from_millis(1723102819023);
+/// assert_eq!(
+///     duration.display_unix_timestamp().to_string(),
+///     "2024-08-08T07:40:19.023000Z+0000"
+/// );
+/// ```
 pub trait DisplayUnixTimeStampExt {
     fn display_unix_timestamp(&self) -> DisplayUnixTimeStamp;
 }

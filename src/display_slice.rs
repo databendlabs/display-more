@@ -52,6 +52,19 @@ impl<T: fmt::Display, const MAX: usize> fmt::Display for DisplaySlice<'_, T, MAX
     }
 }
 
+/// Implement `Display` for `&[T]` if T is `Display`.
+///
+/// It outputs at most `MAX` elements, excluding those from the 5th to the second-to-last one:
+/// - `DisplaySlice(&[1,2,3,4,5,6])` outputs: `"[1,2,3,4,...,6]"`.
+///
+/// # Example
+///
+/// ```rust
+/// use display_more::DisplaySliceExt;
+///
+/// let a = vec![1, 2, 3, 4, 5, 6];
+/// assert_eq!(a.display().to_string(), "[1,2,3,4,..,6]");
+/// ```
 pub trait DisplaySliceExt<'a, T: fmt::Display> {
     fn display(&'a self) -> DisplaySlice<'a, T>;
 

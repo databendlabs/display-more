@@ -30,7 +30,7 @@ display-more = "0.1.0"
 ### Display Option
 
 ```rust
-use display_more::display_option::DisplayOption;
+use display_more::DisplayOption;
 
 let value: Option<i32> = Some(42);
 println!("Value: {}", value.display());
@@ -39,7 +39,7 @@ println!("Value: {}", value.display());
 ### Display Slice
 
 ```rust
-use display_more::display_slice::DisplaySlice;
+use display_more::DisplaySlice;
 
 let numbers = [1, 2, 3, 4, 5];
 println!("Numbers: {}", numbers.display());
@@ -48,7 +48,7 @@ println!("Numbers: {}", numbers.display());
 ### Display Unix Epoch
 
 ```rust
-use display_more::display_unix_epoch::DisplayUnixEpoch;
+use display_more::DisplayUnixEpoch;
 
 let timestamp = 1671234567;
 println!("Time: {}", timestamp.display());
