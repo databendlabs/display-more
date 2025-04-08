@@ -46,18 +46,16 @@ where T: fmt::Display
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_display_option() {
         let option = Some(1);
-        assert_eq!(option.display(), "1");
+        assert_eq!(option.display().to_string(), "1");
     }
 
     #[test]
     fn test_display_option_none() {
-        let option = None;
-        assert_eq!(option.display(), "None");
+        let option = None::<u64>;
+        assert_eq!(option.display().to_string(), "None");
     }
-    
-    
 }
