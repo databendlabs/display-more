@@ -24,9 +24,11 @@
 //! ```
 
 pub mod display_option;
+mod display_result;
 pub mod display_slice;
 pub mod display_unix_epoch;
 
 pub use display_option::DisplayOptionExt;
+pub use display_result::DisplayResultExt;
 pub use display_slice::DisplaySliceExt;
 pub use display_unix_epoch::DisplayUnixTimeStampExt;
