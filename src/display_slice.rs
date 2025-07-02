@@ -16,27 +16,48 @@ use std::fmt;
 
 /// Implement `Display` for `&[T]` if T is `Display`.
 ///
-/// It outputs at most `MAX` elements, excluding those from the 5th to the second-to-last one:
-/// - `DisplaySlice(&[1,2,3,4,5,6])` outputs: `"[1,2,3,4,...,6]"`.
-pub struct DisplaySlice<'a, T: fmt::Display, const MAX: usize = 5>(pub &'a [T]);
+/// It outputs at most `limit` elements, excluding those from the 5th to the second-to-last one:
+/// - `DisplaySlice{ slice: &[1,2,3,4,5,6], ...}` outputs: `"[1,2,3,4,...,6]"`.
+pub struct DisplaySlice<'a, T: fmt::Display> {
+    slice: &'a [T],
+    /// The maximum number of elements to display. by default, it is 5.
+    limit: Option<usize>,
+}
 
-impl<T: fmt::Display, const MAX: usize> fmt::Display for DisplaySlice<'_, T, MAX> {
+impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
+    pub fn new(slice: &'a [T]) -> Self {
+        Self { slice, limit: None }
+    }
+
+    pub fn at_most(mut self, limit: Option<usize>) -> Self {
+        self.limit = limit;
+        self
+    }
+
+    pub fn limit(&self) -> usize {
+        self.limit.unwrap_or(5)
+    }
+}
+
+impl<T: fmt::Display> fmt::Display for DisplaySlice<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let slice = self.0;
+        let limit = self.limit();
+
+        if limit == 0 {
+            return write!(f, "[..]");
+        }
+
+        let slice = self.slice;
         let len = slice.len();
 
         write!(f, "[")?;
 
-        if len > MAX {
-            for (i, t) in slice[..(MAX - 1)].iter().enumerate() {
-                if i > 0 {
-                    write!(f, ",")?;
-                }
-
-                write!(f, "{}", t)?;
+        if len > limit {
+            for t in slice[..(limit - 1)].iter() {
+                write!(f, "{},", t)?;
             }
 
-            write!(f, ",..,")?;
+            write!(f, "..,")?;
             write!(f, "{}", slice.last().unwrap())?;
         } else {
             for (i, t) in slice.iter().enumerate() {
@@ -68,41 +89,53 @@ impl<T: fmt::Display, const MAX: usize> fmt::Display for DisplaySlice<'_, T, MAX
 pub trait DisplaySliceExt<'a, T: fmt::Display> {
     fn display(&'a self) -> DisplaySlice<'a, T>;
 
-    /// Display at most `MAX` elements.
-    fn display_n<const MAX: usize>(&'a self) -> DisplaySlice<'a, T, MAX>;
+    /// Display at most `n` elements.
+    fn display_n(&'a self, n: usize) -> DisplaySlice<'a, T> {
+        self.display().at_most(Some(n))
+    }
 }
 
 impl<T> DisplaySliceExt<'_, T> for [T]
 where T: fmt::Display
 {
     fn display(&self) -> DisplaySlice<T> {
-        DisplaySlice(self)
-    }
-
-    fn display_n<const MAX: usize>(&'_ self) -> DisplaySlice<'_, T, MAX> {
-        DisplaySlice(self)
+        DisplaySlice::new(self)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::DisplaySlice;
+    use crate::DisplaySliceExt;
 
     #[test]
     fn test_display_slice() {
         let a = vec![1, 2, 3, 4];
-        assert_eq!("[1,2,3,4]", DisplaySlice::<_>(&a).to_string());
+        assert_eq!("[1,2,3,4]", DisplaySlice::new(&a).to_string());
 
         let a = vec![1, 2, 3, 4, 5];
-        assert_eq!("[1,2,3,4,5]", DisplaySlice::<_>(&a).to_string());
+        assert_eq!("[1,2,3,4,5]", DisplaySlice::new(&a).to_string());
 
         let a = vec![1, 2, 3, 4, 5, 6];
-        assert_eq!("[1,2,3,4,..,6]", DisplaySlice::<_>(&a).to_string());
+        assert_eq!("[1,2,3,4,..,6]", DisplaySlice::new(&a).to_string());
 
         let a = vec![1, 2, 3, 4, 5, 6, 7];
-        assert_eq!("[1,2,3,4,..,7]", DisplaySlice::<_>(&a).to_string());
+        assert_eq!("[1,2,3,4,..,7]", DisplaySlice::new(&a).to_string());
+
+        // with limit
 
         let a = vec![1, 2, 3, 4, 5, 6, 7];
-        assert_eq!("[1,..,7]", DisplaySlice::<_, 2>(&a).to_string());
+        assert_eq!(
+            "[1,..,7]",
+            DisplaySlice::new(&a).at_most(Some(2)).to_string()
+        );
+
+        assert_eq!("[1,..,7]", a.display().at_most(Some(2)).to_string());
+
+        assert_eq!("[1,..,7]", a.display_n(2).to_string());
+
+        assert_eq!("[..,7]", a.display_n(1).to_string());
+
+        assert_eq!("[..]", a.display_n(0).to_string());
     }
 }
