@@ -5,6 +5,12 @@ version = "0.2.0"
 authors = ["Databend Authors <opensource@datafuselabs.com>"]
 license = "Apache-2.0"
 edition = "2021"
+repository = "https://github.com/drmingdrmer/display-more"
+homepage = "https://github.com/drmingdrmer/display-more"
+documentation = "https://docs.rs/display-more"
+readme = "README.md"
+keywords = ["display", "formatting", "helper", "option", "slice"]
+categories = ["rust-patterns", "value-formatting"]
 
 [features]
 

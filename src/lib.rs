@@ -12,15 +12,58 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Display more types.
+//! Enhanced display formatting for various Rust types.
 //!
-//! # Example
+//! This crate provides extension traits to add flexible display formatting capabilities
+//! for common types including `Option<T>`, `Result<T, E>`, slices, and Unix timestamps.
+//!
+//! # Examples
+//!
+//! ## Display Option
 //!
 //! ```rust
 //! use display_more::DisplayOptionExt;
 //!
-//! let option = Some(1);
-//! assert_eq!(option.display().to_string(), "1");
+//! let some = Some(42);
+//! assert_eq!(some.display().to_string(), "42");
+//!
+//! let none: Option<i32> = None;
+//! assert_eq!(none.display().to_string(), "None");
+//! ```
+//!
+//! ## Display Result
+//!
+//! ```rust
+//! use display_more::DisplayResultExt;
+//!
+//! let ok = Result::<i32, &str>::Ok(42);
+//! assert_eq!(ok.display().to_string(), "Ok(42)");
+//!
+//! let err = Result::<i32, &str>::Err("error");
+//! assert_eq!(err.display().to_string(), "Err(error)");
+//! ```
+//!
+//! ## Display Slice
+//!
+//! ```rust
+//! use display_more::DisplaySliceExt;
+//!
+//! let numbers = vec![1, 2, 3, 4, 5, 6, 7, 8];
+//! assert_eq!(numbers.display().to_string(), "[1,2,3,4,..,8]");
+//! assert_eq!(numbers.display_n(3).to_string(), "[1,2,..,8]");
+//! ```
+//!
+//! ## Display Unix Timestamp
+//!
+//! ```rust
+//! use std::time::Duration;
+//! use display_more::DisplayUnixTimeStampExt;
+//!
+//! let timestamp = Duration::from_millis(1723102819023);
+//! assert_eq!(
+//!     timestamp.display_unix_timestamp().to_string(),
+//!     "2024-08-08T07:40:19.023000Z+0000"
+//! );
 //! ```
 
 pub mod display_option;
