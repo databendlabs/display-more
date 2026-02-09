@@ -4,7 +4,7 @@ A Rust utility crate providing enhanced display formatting for various types.
 
 ## Features
 
-- **Display Option**: Format `Option<T>` values with customizable display
+- **Display Option**: Format `Option<T>` values via `Display` or `Debug`
 - **Display Result**: Format `Result<T, E>` values
 - **Display Slice**: Format slices with configurable element limits
 - **Display Unix Epoch**: Convert Unix timestamps to human-readable datetime strings
@@ -31,6 +31,7 @@ println!("{}", value.display());  // "42"
 let none: Option<i32> = None;
 println!("{}", none.display());   // "None"
 ```
+
 
 ### Display Result
 
