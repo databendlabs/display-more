@@ -57,6 +57,7 @@
 //!
 //! ```rust
 //! use std::time::Duration;
+//!
 //! use display_more::DisplayUnixTimeStampExt;
 //!
 //! let timestamp = Duration::from_millis(1723102819023);
@@ -71,6 +72,7 @@ mod display_result;
 pub mod display_slice;
 pub mod display_unix_epoch;
 
+pub use display_option::DisplayDebugOptionExt;
 pub use display_option::DisplayOptionExt;
 pub use display_result::DisplayResultExt;
 pub use display_slice::DisplaySliceExt;
