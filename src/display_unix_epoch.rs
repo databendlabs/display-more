@@ -21,7 +21,7 @@ use chrono::Utc;
 
 pub struct DisplayUnixTimeStamp {
     /// The duration since the UNIX epoch.
-    duration: Duration,
+    duration: Option<Duration>,
 
     in_millis: bool,
 
@@ -30,7 +30,12 @@ pub struct DisplayUnixTimeStamp {
 
 impl fmt::Display for DisplayUnixTimeStamp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let system_time = UNIX_EPOCH + self.duration;
+        let duration = match self.duration {
+            Some(d) => d,
+            None => return write!(f, "None"),
+        };
+
+        let system_time = UNIX_EPOCH + duration;
         let datetime: DateTime<Utc> = system_time.into();
 
         let fmt = if self.in_millis {
@@ -50,7 +55,7 @@ impl fmt::Display for DisplayUnixTimeStamp {
 }
 
 impl DisplayUnixTimeStamp {
-    pub fn new(duration: Duration) -> Self {
+    pub fn new(duration: Option<Duration>) -> Self {
         Self {
             duration,
             in_millis: false,
@@ -98,6 +103,12 @@ pub trait DisplayUnixTimeStampExt {
 
 impl DisplayUnixTimeStampExt for Duration {
     fn display_unix_timestamp(&self) -> DisplayUnixTimeStamp {
+        DisplayUnixTimeStamp::new(Some(*self))
+    }
+}
+
+impl DisplayUnixTimeStampExt for Option<Duration> {
+    fn display_unix_timestamp(&self) -> DisplayUnixTimeStamp {
         DisplayUnixTimeStamp::new(*self)
     }
 }
@@ -120,5 +131,21 @@ mod tests {
 
         let display = epoch.display_unix_timestamp_short();
         assert_eq!(format!("{}", display), "2024-08-08T07:40:19.023");
+
+        // Option<Duration>: Some
+        let some = Some(Duration::from_millis(1723102819023));
+        assert_eq!(
+            some.display_unix_timestamp().to_string(),
+            "2024-08-08T07:40:19.023000Z+0000"
+        );
+        assert_eq!(
+            some.display_unix_timestamp_short().to_string(),
+            "2024-08-08T07:40:19.023"
+        );
+
+        // Option<Duration>: None
+        let none: Option<Duration> = None;
+        assert_eq!(none.display_unix_timestamp().to_string(), "None");
+        assert_eq!(none.display_unix_timestamp_short().to_string(), "None");
     }
 }
