@@ -28,6 +28,14 @@ pub struct DisplaySlice<'a, T: fmt::Display> {
     left_brace: &'a str,
     /// The right brace. by default, it is "]".
     right_brace: &'a str,
+    /// The ellipsis string. by default, it is "..".
+    ellipsis: &'a str,
+    /// The prefix for each element. by default, it is "".
+    elem_prefix: &'a str,
+    /// The suffix for each element. by default, it is "".
+    elem_suffix: &'a str,
+    /// Whether to show the total count when truncated. by default, it is false.
+    show_count: bool,
 }
 
 impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
@@ -38,6 +46,10 @@ impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
             separator: ",",
             left_brace: "[",
             right_brace: "]",
+            ellipsis: "..",
+            elem_prefix: "",
+            elem_suffix: "",
+            show_count: false,
         }
     }
 
@@ -57,6 +69,22 @@ impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
         self
     }
 
+    pub fn ellipsis(mut self, s: &'a str) -> Self {
+        self.ellipsis = s;
+        self
+    }
+
+    pub fn elem(mut self, prefix: &'a str, suffix: &'a str) -> Self {
+        self.elem_prefix = prefix;
+        self.elem_suffix = suffix;
+        self
+    }
+
+    pub fn show_count(mut self) -> Self {
+        self.show_count = true;
+        self
+    }
+
     pub fn limit(&self) -> usize {
         self.limit.unwrap_or(5)
     }
@@ -65,32 +93,40 @@ impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
 impl<T: fmt::Display> fmt::Display for DisplaySlice<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let limit = self.limit();
-
-        if limit == 0 {
-            return write!(f, "{}..{}", self.left_brace, self.right_brace);
-        }
-
         let slice = self.slice;
         let len = slice.len();
+        let truncated = len > limit;
+
+        let ell;
+        let ellipsis = if self.show_count && truncated {
+            ell = format!("{}({len} total)", self.ellipsis);
+            &ell
+        } else {
+            self.ellipsis
+        };
+
+        if limit == 0 {
+            return write!(f, "{}{ellipsis}{}", self.left_brace, self.right_brace);
+        }
 
         write!(f, "{}", self.left_brace)?;
 
-        let sep = self.separator;
+        let (pre, suf, sep) = (self.elem_prefix, self.elem_suffix, self.separator);
 
-        if len > limit {
+        if truncated {
             for t in slice[..(limit - 1)].iter() {
-                write!(f, "{}{}", t, sep)?;
+                write!(f, "{pre}{t}{suf}{sep}")?;
             }
 
-            write!(f, "..{}", sep)?;
-            write!(f, "{}", slice.last().unwrap())?;
+            write!(f, "{ellipsis}{sep}")?;
+            write!(f, "{pre}{}{suf}", slice.last().unwrap())?;
         } else {
             for (i, t) in slice.iter().enumerate() {
                 if i > 0 {
-                    write!(f, "{}", sep)?;
+                    write!(f, "{sep}")?;
                 }
 
-                write!(f, "{}", t)?;
+                write!(f, "{pre}{t}{suf}")?;
             }
         }
 
@@ -184,6 +220,98 @@ mod tests {
 
         // limit=0 is unaffected by separator
         assert_eq!("[..]", a.display_n(0).sep(" ").to_string());
+    }
+
+    #[test]
+    fn test_display_slice_ellipsis() {
+        let a = vec![1, 2, 3, 4, 5, 6];
+
+        // Custom ellipsis "..."
+        assert_eq!("[1,2,3,4,...,6]", a.display().ellipsis("...").to_string());
+
+        // Unicode ellipsis
+        assert_eq!(
+            "[1,2,3,4,\u{2026},6]",
+            a.display().ellipsis("\u{2026}").to_string()
+        );
+
+        // Empty ellipsis
+        assert_eq!("[1,2,3,4,,6]", a.display().ellipsis("").to_string());
+
+        // limit=0 with custom ellipsis
+        assert_eq!("[...]", a.display_n(0).ellipsis("...").to_string());
+
+        // Combined with custom separator
+        assert_eq!(
+            "[1, 2, 3, 4, ..., 6]",
+            a.display().ellipsis("...").sep(", ").to_string()
+        );
+    }
+
+    #[test]
+    fn test_display_slice_elem() {
+        let a = vec![1, 2, 3];
+
+        // Quotes
+        assert_eq!("['1','2','3']", a.display().elem("'", "'").to_string());
+
+        // Quotes with truncation
+        let b = vec![1, 2, 3, 4, 5, 6];
+        assert_eq!(
+            "['1','2','3','4',..,'6']",
+            b.display().elem("'", "'").to_string()
+        );
+
+        // Angle brackets
+        assert_eq!("[<1>,<2>,<3>]", a.display().elem("<", ">").to_string());
+
+        // Combined with custom separator
+        assert_eq!(
+            "['1', '2', '3']",
+            a.display().elem("'", "'").sep(", ").to_string()
+        );
+
+        // Empty prefix/suffix (default behavior)
+        assert_eq!("[1,2,3]", a.display().elem("", "").to_string());
+    }
+
+    #[test]
+    fn test_display_slice_show_count() {
+        let a = vec![1, 2, 3, 4, 5, 6, 7];
+
+        // Basic
+        assert_eq!(
+            "[1,2,3,4,..(7 total),7]",
+            a.display().show_count().to_string()
+        );
+
+        // limit=0
+        assert_eq!("[..(7 total)]", a.display_n(0).show_count().to_string());
+
+        // limit=1
+        assert_eq!("[..(7 total),7]", a.display_n(1).show_count().to_string());
+
+        // No truncation (len <= limit): count not shown
+        let c = vec![1, 2, 3];
+        assert_eq!("[1,2,3]", c.display().show_count().to_string());
+
+        // Combined with custom ellipsis
+        assert_eq!(
+            "[1,2,3,4,...(7 total),7]",
+            a.display().ellipsis("...").show_count().to_string()
+        );
+
+        // Combined with all features
+        assert_eq!(
+            "{'1', '2', '3', '4', ...(7 total), '7'}",
+            a.display()
+                .ellipsis("...")
+                .show_count()
+                .elem("'", "'")
+                .sep(", ")
+                .braces("{", "}")
+                .to_string()
+        );
     }
 
     #[test]
