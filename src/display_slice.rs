@@ -22,15 +22,26 @@ pub struct DisplaySlice<'a, T: fmt::Display> {
     slice: &'a [T],
     /// The maximum number of elements to display. by default, it is 5.
     limit: Option<usize>,
+    /// The separator between elements. by default, it is ",".
+    separator: &'a str,
 }
 
 impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
     pub fn new(slice: &'a [T]) -> Self {
-        Self { slice, limit: None }
+        Self {
+            slice,
+            limit: None,
+            separator: ",",
+        }
     }
 
     pub fn at_most(mut self, limit: Option<usize>) -> Self {
         self.limit = limit;
+        self
+    }
+
+    pub fn sep(mut self, separator: &'a str) -> Self {
+        self.separator = separator;
         self
     }
 
@@ -52,17 +63,19 @@ impl<T: fmt::Display> fmt::Display for DisplaySlice<'_, T> {
 
         write!(f, "[")?;
 
+        let sep = self.separator;
+
         if len > limit {
             for t in slice[..(limit - 1)].iter() {
-                write!(f, "{},", t)?;
+                write!(f, "{}{}", t, sep)?;
             }
 
-            write!(f, "..,")?;
+            write!(f, "..{}", sep)?;
             write!(f, "{}", slice.last().unwrap())?;
         } else {
             for (i, t) in slice.iter().enumerate() {
                 if i > 0 {
-                    write!(f, ",")?;
+                    write!(f, "{}", sep)?;
                 }
 
                 write!(f, "{}", t)?;
@@ -137,5 +150,27 @@ mod tests {
         assert_eq!("[..,7]", a.display_n(1).to_string());
 
         assert_eq!("[..]", a.display_n(0).to_string());
+    }
+
+    #[test]
+    fn test_display_slice_separator() {
+        let a = vec![1, 2, 3];
+        assert_eq!("[1, 2, 3]", a.display().sep(", ").to_string());
+
+        let a = vec![1, 2, 3, 4, 5, 6];
+        assert_eq!("[1, 2, 3, 4, .., 6]", a.display().sep(", ").to_string());
+
+        assert_eq!("[1|..|6]", a.display_n(2).sep("|").to_string());
+
+        assert_eq!("[1 2 3 4 .. 6]", a.display().sep(" ").to_string());
+
+        assert_eq!("[1234..6]", a.display().sep("").to_string());
+        assert_eq!("[1..6]", a.display_n(2).sep("").to_string());
+
+        // limit=1 with custom separator
+        assert_eq!("[.. 6]", a.display_n(1).sep(" ").to_string());
+
+        // limit=0 is unaffected by separator
+        assert_eq!("[..]", a.display_n(0).sep(" ").to_string());
     }
 }
