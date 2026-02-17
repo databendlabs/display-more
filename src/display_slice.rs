@@ -24,6 +24,10 @@ pub struct DisplaySlice<'a, T: fmt::Display> {
     limit: Option<usize>,
     /// The separator between elements. by default, it is ",".
     separator: &'a str,
+    /// The left brace. by default, it is "[".
+    left_brace: &'a str,
+    /// The right brace. by default, it is "]".
+    right_brace: &'a str,
 }
 
 impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
@@ -32,6 +36,8 @@ impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
             slice,
             limit: None,
             separator: ",",
+            left_brace: "[",
+            right_brace: "]",
         }
     }
 
@@ -45,6 +51,12 @@ impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
         self
     }
 
+    pub fn braces(mut self, left: &'a str, right: &'a str) -> Self {
+        self.left_brace = left;
+        self.right_brace = right;
+        self
+    }
+
     pub fn limit(&self) -> usize {
         self.limit.unwrap_or(5)
     }
@@ -55,13 +67,13 @@ impl<T: fmt::Display> fmt::Display for DisplaySlice<'_, T> {
         let limit = self.limit();
 
         if limit == 0 {
-            return write!(f, "[..]");
+            return write!(f, "{}..{}", self.left_brace, self.right_brace);
         }
 
         let slice = self.slice;
         let len = slice.len();
 
-        write!(f, "[")?;
+        write!(f, "{}", self.left_brace)?;
 
         let sep = self.separator;
 
@@ -82,7 +94,7 @@ impl<T: fmt::Display> fmt::Display for DisplaySlice<'_, T> {
             }
         }
 
-        write!(f, "]")
+        write!(f, "{}", self.right_brace)
     }
 }
 
@@ -172,5 +184,35 @@ mod tests {
 
         // limit=0 is unaffected by separator
         assert_eq!("[..]", a.display_n(0).sep(" ").to_string());
+    }
+
+    #[test]
+    fn test_display_slice_braces() {
+        let a = vec![1, 2, 3];
+
+        // Custom braces, no truncation
+        assert_eq!("{1,2,3}", a.display().braces("{", "}").to_string());
+
+        // Custom braces with truncation
+        let b = vec![1, 2, 3, 4, 5, 6];
+        assert_eq!("{1,2,3,4,..,6}", b.display().braces("{", "}").to_string());
+
+        // Custom braces combined with custom separator
+        assert_eq!(
+            "{1, 2, 3, 4, .., 6}",
+            b.display().braces("{", "}").sep(", ").to_string()
+        );
+
+        // Custom braces with limit=0
+        assert_eq!("{..}", b.display_n(0).braces("{", "}").to_string());
+
+        // Parentheses
+        assert_eq!("(1,2,3)", a.display().braces("(", ")").to_string());
+
+        // Angle brackets
+        assert_eq!("<1,2,3>", a.display().braces("<", ">").to_string());
+
+        // Empty braces
+        assert_eq!("1,2,3", a.display().braces("", "").to_string());
     }
 }
