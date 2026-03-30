@@ -69,6 +69,7 @@
 
 mod display_btreeset;
 mod display_into_iter;
+mod display_iterator_options;
 pub mod display_option;
 mod display_result;
 pub mod display_slice;

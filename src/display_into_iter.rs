@@ -1,4 +1,20 @@
+// Copyright 2021 Datafuse Labs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use std::fmt;
+
+use crate::display_iterator_options::DisplayIteratorOptions;
 
 /// Implement `Display` for cloneable iter sources that yield `&T`.
 ///
@@ -10,22 +26,7 @@ where
     S::IntoIter: DoubleEndedIterator + ExactSizeIterator,
 {
     items: S,
-    /// The maximum number of elements to display. by default, it is 5.
-    limit: Option<usize>,
-    /// The separator between elements. by default, it is ",".
-    separator: &'a str,
-    /// The left brace. by default, it is "[".
-    left_brace: &'a str,
-    /// The right brace. by default, it is "]".
-    right_brace: &'a str,
-    /// The ellipsis string. by default, it is "..".
-    ellipsis: &'a str,
-    /// The prefix for each element. by default, it is "".
-    elem_prefix: &'a str,
-    /// The suffix for each element. by default, it is "".
-    elem_suffix: &'a str,
-    /// Whether to show the total count when truncated. by default, it is false.
-    show_count: bool,
+    options: DisplayIteratorOptions<'a>,
 }
 
 impl<'a, T, S> DisplayIntoIter<'a, T, S>
@@ -37,51 +38,44 @@ where
     pub fn new(items: S) -> Self {
         Self {
             items,
-            limit: None,
-            separator: ",",
-            left_brace: "[",
-            right_brace: "]",
-            ellipsis: "..",
-            elem_prefix: "",
-            elem_suffix: "",
-            show_count: false,
+            options: DisplayIteratorOptions::default(),
         }
     }
 
     pub fn at_most(mut self, limit: Option<usize>) -> Self {
-        self.limit = limit;
+        self.options.limit = limit;
         self
     }
 
     pub fn sep(mut self, separator: &'a str) -> Self {
-        self.separator = separator;
+        self.options.separator = separator;
         self
     }
 
     pub fn braces(mut self, left: &'a str, right: &'a str) -> Self {
-        self.left_brace = left;
-        self.right_brace = right;
+        self.options.left_brace = left;
+        self.options.right_brace = right;
         self
     }
 
     pub fn ellipsis(mut self, s: &'a str) -> Self {
-        self.ellipsis = s;
+        self.options.ellipsis = s;
         self
     }
 
     pub fn elem(mut self, prefix: &'a str, suffix: &'a str) -> Self {
-        self.elem_prefix = prefix;
-        self.elem_suffix = suffix;
+        self.options.elem_prefix = prefix;
+        self.options.elem_suffix = suffix;
         self
     }
 
     pub fn show_count(mut self) -> Self {
-        self.show_count = true;
+        self.options.show_count = true;
         self
     }
 
     pub fn limit(&self) -> usize {
-        self.limit.unwrap_or(5)
+        self.options.limit()
     }
 }
 
@@ -95,22 +89,23 @@ where
         let limit = self.limit();
         let len = self.items.clone().into_iter().len();
         let truncated = len > limit;
+        let options = &self.options;
 
         let ell;
-        let ellipsis = if self.show_count && truncated {
-            ell = format!("{}({len} total)", self.ellipsis);
+        let ellipsis = if options.show_count && truncated {
+            ell = format!("{}({len} total)", options.ellipsis);
             &ell
         } else {
-            self.ellipsis
+            options.ellipsis
         };
 
         if limit == 0 {
-            return write!(f, "{}{ellipsis}{}", self.left_brace, self.right_brace);
+            return write!(f, "{}{ellipsis}{}", options.left_brace, options.right_brace);
         }
 
-        write!(f, "{}", self.left_brace)?;
+        write!(f, "{}", options.left_brace)?;
 
-        let (pre, suf, sep) = (self.elem_prefix, self.elem_suffix, self.separator);
+        let (pre, suf, sep) = (options.elem_prefix, options.elem_suffix, options.separator);
 
         if truncated {
             let mut iter = self.items.clone().into_iter();
@@ -136,7 +131,7 @@ where
             }
         }
 
-        write!(f, "{}", self.right_brace)
+        write!(f, "{}", options.right_brace)
     }
 }
 
@@ -188,8 +183,18 @@ mod tests {
     fn test_display_into_iter_limit_edges() {
         let values = [1, 2, 3, 4, 5, 6];
 
-        assert_eq!("[..]", DisplayIntoIter::new(values.iter()).at_most(Some(0)).to_string());
-        assert_eq!("[..,6]", DisplayIntoIter::new(values.iter()).at_most(Some(1)).to_string());
+        assert_eq!(
+            "[..]",
+            DisplayIntoIter::new(values.iter())
+                .at_most(Some(0))
+                .to_string()
+        );
+        assert_eq!(
+            "[..,6]",
+            DisplayIntoIter::new(values.iter())
+                .at_most(Some(1))
+                .to_string()
+        );
     }
 
     #[test]
