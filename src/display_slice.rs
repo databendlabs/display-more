@@ -118,12 +118,12 @@ mod tests {
         let a = vec![1, 2, 3, 4, 5, 6];
         assert_eq!("[1,2,3,4,..,6]", DisplaySlice::new(&a).to_string());
 
-        let a = vec![1, 2, 3, 4, 5, 6, 7];
+        let a = [1, 2, 3, 4, 5, 6, 7];
         assert_eq!("[1,2,3,4,..,7]", DisplaySlice::new(&a).to_string());
 
         // with limit
 
-        let a = vec![1, 2, 3, 4, 5, 6, 7];
+        let a = [1, 2, 3, 4, 5, 6, 7];
         assert_eq!(
             "[1,..,7]",
             DisplaySlice::new(&a).at_most(Some(2)).to_string()
@@ -140,10 +140,10 @@ mod tests {
 
     #[test]
     fn test_display_slice_separator() {
-        let a = vec![1, 2, 3];
+        let a = [1, 2, 3];
         assert_eq!("[1, 2, 3]", a.display().sep(", ").to_string());
 
-        let a = vec![1, 2, 3, 4, 5, 6];
+        let a = [1, 2, 3, 4, 5, 6];
         assert_eq!("[1, 2, 3, 4, .., 6]", a.display().sep(", ").to_string());
 
         assert_eq!("[1|..|6]", a.display_n(2).sep("|").to_string());
@@ -162,7 +162,7 @@ mod tests {
 
     #[test]
     fn test_display_slice_ellipsis() {
-        let a = vec![1, 2, 3, 4, 5, 6];
+        let a = [1, 2, 3, 4, 5, 6];
 
         // Custom ellipsis "..."
         assert_eq!("[1,2,3,4,...,6]", a.display().ellipsis("...").to_string());
@@ -188,13 +188,13 @@ mod tests {
 
     #[test]
     fn test_display_slice_elem() {
-        let a = vec![1, 2, 3];
+        let a = [1, 2, 3];
 
         // Quotes
         assert_eq!("['1','2','3']", a.display().elem("'", "'").to_string());
 
         // Quotes with truncation
-        let b = vec![1, 2, 3, 4, 5, 6];
+        let b = [1, 2, 3, 4, 5, 6];
         assert_eq!(
             "['1','2','3','4',..,'6']",
             b.display().elem("'", "'").to_string()
@@ -215,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_display_slice_show_count() {
-        let a = vec![1, 2, 3, 4, 5, 6, 7];
+        let a = [1, 2, 3, 4, 5, 6, 7];
 
         // Basic
         assert_eq!(
@@ -230,7 +230,7 @@ mod tests {
         assert_eq!("[..(7 total),7]", a.display_n(1).show_count().to_string());
 
         // No truncation (len <= limit): count not shown
-        let c = vec![1, 2, 3];
+        let c = [1, 2, 3];
         assert_eq!("[1,2,3]", c.display().show_count().to_string());
 
         // Combined with custom ellipsis
@@ -254,13 +254,13 @@ mod tests {
 
     #[test]
     fn test_display_slice_braces() {
-        let a = vec![1, 2, 3];
+        let a = [1, 2, 3];
 
         // Custom braces, no truncation
         assert_eq!("{1,2,3}", a.display().braces("{", "}").to_string());
 
         // Custom braces with truncation
-        let b = vec![1, 2, 3, 4, 5, 6];
+        let b = [1, 2, 3, 4, 5, 6];
         assert_eq!("{1,2,3,4,..,6}", b.display().braces("{", "}").to_string());
 
         // Custom braces combined with custom separator
