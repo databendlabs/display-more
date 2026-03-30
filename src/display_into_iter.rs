@@ -146,6 +146,18 @@ mod tests {
 
     use super::DisplayIntoIter;
 
+    #[derive(Clone)]
+    struct Items<'a, T>(&'a [T]);
+
+    impl<'a, T> IntoIterator for Items<'a, T> {
+        type Item = &'a T;
+        type IntoIter = std::slice::Iter<'a, T>;
+
+        fn into_iter(self) -> Self::IntoIter {
+            self.0.iter()
+        }
+    }
+
     #[test]
     fn test_display_into_iter_slice() {
         let values = [1, 2, 3, 4, 5, 6];
@@ -159,5 +171,40 @@ mod tests {
     fn test_display_into_iter_btreeset() {
         let values = (1..=6).collect::<BTreeSet<_>>();
         assert_eq!("[1,2,3,4,..,6]", DisplayIntoIter::new(&values).to_string());
+    }
+
+    #[test]
+    fn test_display_into_iter_custom_container() {
+        let values = [1, 2, 3, 4, 5, 6];
+        assert_eq!(
+            "[1,2,..,6]",
+            DisplayIntoIter::new(Items(&values))
+                .at_most(Some(3))
+                .to_string()
+        );
+    }
+
+    #[test]
+    fn test_display_into_iter_limit_edges() {
+        let values = [1, 2, 3, 4, 5, 6];
+
+        assert_eq!("[..]", DisplayIntoIter::new(values.iter()).at_most(Some(0)).to_string());
+        assert_eq!("[..,6]", DisplayIntoIter::new(values.iter()).at_most(Some(1)).to_string());
+    }
+
+    #[test]
+    fn test_display_into_iter_combined_formatting() {
+        let values = [1, 2, 3, 4, 5, 6, 7];
+
+        assert_eq!(
+            "{'1' | '2' | '3' | '4' | ...(7 total) | '7'}",
+            DisplayIntoIter::new(values.iter())
+                .ellipsis("...")
+                .show_count()
+                .elem("'", "'")
+                .sep(" | ")
+                .braces("{", "}")
+                .to_string()
+        );
     }
 }
