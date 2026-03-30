@@ -14,123 +14,61 @@
 
 use std::fmt;
 
+use crate::DisplayIntoIter;
+
 /// Implement `Display` for `&[T]` if T is `Display`.
 ///
 /// It outputs at most `limit` elements, excluding those from the 5th to the second-to-last one:
 /// - `DisplaySlice{ slice: &[1,2,3,4,5,6], ...}` outputs: `"[1,2,3,4,...,6]"`.
 pub struct DisplaySlice<'a, T: fmt::Display> {
-    slice: &'a [T],
-    /// The maximum number of elements to display. by default, it is 5.
-    limit: Option<usize>,
-    /// The separator between elements. by default, it is ",".
-    separator: &'a str,
-    /// The left brace. by default, it is "[".
-    left_brace: &'a str,
-    /// The right brace. by default, it is "]".
-    right_brace: &'a str,
-    /// The ellipsis string. by default, it is "..".
-    ellipsis: &'a str,
-    /// The prefix for each element. by default, it is "".
-    elem_prefix: &'a str,
-    /// The suffix for each element. by default, it is "".
-    elem_suffix: &'a str,
-    /// Whether to show the total count when truncated. by default, it is false.
-    show_count: bool,
+    inner: DisplayIntoIter<'a, T, std::slice::Iter<'a, T>>,
 }
 
 impl<'a, T: fmt::Display> DisplaySlice<'a, T> {
     pub fn new(slice: &'a [T]) -> Self {
         Self {
-            slice,
-            limit: None,
-            separator: ",",
-            left_brace: "[",
-            right_brace: "]",
-            ellipsis: "..",
-            elem_prefix: "",
-            elem_suffix: "",
-            show_count: false,
+            inner: DisplayIntoIter::new(slice.iter()),
         }
     }
 
     pub fn at_most(mut self, limit: Option<usize>) -> Self {
-        self.limit = limit;
+        self.inner = self.inner.at_most(limit);
         self
     }
 
     pub fn sep(mut self, separator: &'a str) -> Self {
-        self.separator = separator;
+        self.inner = self.inner.sep(separator);
         self
     }
 
     pub fn braces(mut self, left: &'a str, right: &'a str) -> Self {
-        self.left_brace = left;
-        self.right_brace = right;
+        self.inner = self.inner.braces(left, right);
         self
     }
 
     pub fn ellipsis(mut self, s: &'a str) -> Self {
-        self.ellipsis = s;
+        self.inner = self.inner.ellipsis(s);
         self
     }
 
     pub fn elem(mut self, prefix: &'a str, suffix: &'a str) -> Self {
-        self.elem_prefix = prefix;
-        self.elem_suffix = suffix;
+        self.inner = self.inner.elem(prefix, suffix);
         self
     }
 
     pub fn show_count(mut self) -> Self {
-        self.show_count = true;
+        self.inner = self.inner.show_count();
         self
     }
 
     pub fn limit(&self) -> usize {
-        self.limit.unwrap_or(5)
+        self.inner.limit()
     }
 }
 
 impl<T: fmt::Display> fmt::Display for DisplaySlice<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let limit = self.limit();
-        let slice = self.slice;
-        let len = slice.len();
-        let truncated = len > limit;
-
-        let ell;
-        let ellipsis = if self.show_count && truncated {
-            ell = format!("{}({len} total)", self.ellipsis);
-            &ell
-        } else {
-            self.ellipsis
-        };
-
-        if limit == 0 {
-            return write!(f, "{}{ellipsis}{}", self.left_brace, self.right_brace);
-        }
-
-        write!(f, "{}", self.left_brace)?;
-
-        let (pre, suf, sep) = (self.elem_prefix, self.elem_suffix, self.separator);
-
-        if truncated {
-            for t in slice[..(limit - 1)].iter() {
-                write!(f, "{pre}{t}{suf}{sep}")?;
-            }
-
-            write!(f, "{ellipsis}{sep}")?;
-            write!(f, "{pre}{}{suf}", slice.last().unwrap())?;
-        } else {
-            for (i, t) in slice.iter().enumerate() {
-                if i > 0 {
-                    write!(f, "{sep}")?;
-                }
-
-                write!(f, "{pre}{t}{suf}")?;
-            }
-        }
-
-        write!(f, "{}", self.right_brace)
+        self.inner.fmt(f)
     }
 }
 

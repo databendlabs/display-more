@@ -67,11 +67,16 @@
 //! );
 //! ```
 
+mod display_btreeset;
+mod display_into_iter;
 pub mod display_option;
 mod display_result;
 pub mod display_slice;
 pub mod display_unix_epoch;
 
+pub use display_btreeset::DisplayBTreeSet;
+pub use display_btreeset::DisplayBTreeSetExt;
+pub use display_into_iter::DisplayIntoIter;
 pub use display_option::DisplayDebugOptionExt;
 pub use display_option::DisplayOptionExt;
 pub use display_result::DisplayResultExt;
