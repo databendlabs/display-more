@@ -183,4 +183,20 @@ mod tests {
                 .to_string()
         );
     }
+
+    #[test]
+    fn test_display_btreeset_limit_getter_and_large_limit() {
+        let set = (1..=3).collect::<BTreeSet<_>>();
+
+        let display = DisplayBTreeSet::new(&set);
+        assert_eq!(5, display.limit());
+        assert_eq!(10, display.at_most(Some(10)).limit());
+        assert_eq!("[1,2,3]", set.display_n(10).to_string());
+    }
+
+    #[test]
+    fn test_display_btreeset_show_count_without_truncation() {
+        let set = (1..=3).collect::<BTreeSet<_>>();
+        assert_eq!("[1,2,3]", DisplayBTreeSet::new(&set).show_count().to_string());
+    }
 }

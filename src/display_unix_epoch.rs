@@ -132,6 +132,12 @@ mod tests {
         let display = epoch.display_unix_timestamp_short();
         assert_eq!(format!("{}", display), "2024-08-08T07:40:19.023");
 
+        let display = epoch.display_unix_timestamp().in_millis(true);
+        assert_eq!(format!("{}", display), "2024-08-08T07:40:19.023Z+0000");
+
+        let display = epoch.display_unix_timestamp().with_timezone(false);
+        assert_eq!(format!("{}", display), "2024-08-08T07:40:19.023000");
+
         // Option<Duration>: Some
         let some = Some(Duration::from_millis(1723102819023));
         assert_eq!(
